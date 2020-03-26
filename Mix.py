@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 #----------------------------------------------------------------------
-# Mixing tool made by Aviv Brook.
+# Mix.py
+# A tool that helps curate DJ sets by providing suggestions for song
+# transitions using key & BPM.
+#
+# Aviv Brook.
 #----------------------------------------------------------------------
 
 from urllib.request import urlopen
@@ -10,9 +14,10 @@ import requests
 from lxml import html
 import os
 
-infilename = 'links'
-outfilename = '.db'
+infilename = 'links'    # you can change these if you want
+outfilename = '.db'     # good practice to keep this as a hidden file
 
+# Mapping key names to numerical representation
 keys = {'Ab min': '1A',
         'G# min': '1A',
         'B maj': '1B',
@@ -67,6 +72,9 @@ def sanitised_input(prompt, type_=None, min_=None, max_=None):
             return ui
 
 class Song:
+    """
+    Song data structure used for all the processing.
+    """
     def __init__(self, name, mix, artists, bpm, key):
         self.name = name
         self.mix = mix
@@ -78,6 +86,9 @@ class Song:
         return self.name + ' (' + self.mix + ') by ' + self.artists + '\n' + 'BPM: ' + str(self.bpm) + '\n' + 'Key: ' + self.key + '\n'
 
 def get_song(url):
+    """
+    Return a Song object from a Beatport link.
+    """
     try:
         socket = urlopen(url)
         data = socket.read()
@@ -98,11 +109,17 @@ def get_song(url):
         pass
 
 def write_songs(infile, outfile):
+    """
+    Write songs to a database file.
+    """
     songs = [song for song in [get_song(line.rstrip()) for line in infile] if song]
     [outfile.write(str(i) + '.\n' + str(songs[i])) for i in range(len(songs))]
     return songs
 
 def read_songs(infile):
+    """
+    Read songs from a database file.
+    """
     lines = [line.rstrip() for line in infile]
     songs = []
     for i in range(0, len(lines), 4):
@@ -116,6 +133,9 @@ def read_songs(infile):
     return songs
 
 def find_keys(key):
+    """
+    Return a list of keys that sound good with a given key.
+    """
     key_val = keys[key]
     good_keys = []
     good_keys.append(key_val)
@@ -136,6 +156,9 @@ def find_keys(key):
     return good_keys
 
 def recommend(songs, good_keyvals):
+    """
+    Return a list of songs that match a list of keys.
+    """
     good_keys = []
     for k in keys:
         if keys[k] in good_keyvals: good_keys.append(k)
@@ -157,30 +180,7 @@ outfile.close()
 
 [print(str(i) + '.\n' + str(songs[i])) for i in range(len(songs))]
 
-"""
-sequence = []
-num = sanitised_input("Pick the first song: ", int, 0, len(songs) - 1)
-song = songs.pop(num)
-sequence.append(song)
-print('\nSelected:\n' + str(song))
-recommended_songs = sorted(recommend(songs, find_keys(song.key)), key=lambda curr: abs(curr.bpm - song.bpm))
-print('\nRecommended songs to transition into:\n')
-[print(str(i) + '.\n' + str(recommended_songs[i])) for i in range(len(recommended_songs))]
-not_recommended_songs = list(set(songs) - set(recommended_songs))
-print('\nRest of songs:\n')
-[print(str(i + len(recommended_songs)) + '.\n' + str(not_recommended_songs[i])) for i in range(len(not_recommended_songs))]
-
-num = sanitised_input("Pick the next song: ", int, 0, len(songs) - 1)
-if num < len(recommended_songs): song = recommended_songs[num]
-else: song = not_recommended_songs[num - len(recommended_songs)]
-songs.remove(song)
-sequence.append(song)
-print('\nSelected:\n' + str(song))
-recommended_songs = sorted(recommend(songs, find_keys(song.key)), key=lambda curr: abs(curr.bpm - song.bpm))
-print('\nRecommended songs to transition into:\n')
-[print(str(i) + '.\n' + str(recommended_songs[i])) for i in range(len(recommended_songs))]
-"""
-
+# Main loop.
 sequence = []
 recommended_songs = []
 not_recommended_songs = songs
